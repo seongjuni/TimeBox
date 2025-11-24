@@ -1,0 +1,20 @@
+.bottom-panel {
+  margin-top: 4px;
+}
+
+.bottom-panel-inner {
+  padding: 10px 12px 12px;
+}
+
+.bottom-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.recommendation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
