@@ -66,6 +66,38 @@ function isSameCourse(a: Course, b: Course): boolean {
   return a.courseName === b.courseName && a.section === b.section
 }
 
+function timeStringToHour(time: string): number {
+  const [h, m = '0'] = time.split(':')
+  const hour = Number(h)
+  const minute = Number(m)
+  return hour + minute / 60
+}
+
+// 선택된 과목들(selected)과 candidate 과목이 시간표에서 겹치는지 확인
+function hasTimeConflictWithSelected(selected: Course[], candidate: Course): boolean {
+  for (const day of orderedDayKeys) {
+    const candInfo = candidate.schedule[day]
+    if (!candInfo) continue
+
+    const candStart = timeStringToHour(candInfo.start)
+    const candEnd = timeStringToHour(candInfo.end)
+
+    for (const course of selected) {
+      const existInfo = course.schedule[day]
+      if (!existInfo) continue
+
+      const existStart = timeStringToHour(existInfo.start)
+      const existEnd = timeStringToHour(existInfo.end)
+
+      // [start, end) 구간이 하나라도 겹치면 true
+      if (candStart < existEnd && existStart < candEnd) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 const CourseListPanel: FC<CourseListPanelProps> = ({
   courses,
   selectedCourses,
@@ -80,6 +112,11 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
   // 🔹 전공/교양 필터
   const [categoryFilter, setCategoryFilter] =
     useState<'all' | 'major' | 'liberal'>('all')
+  // 🔹 시간표와 안 겹치는 과목만
+  const [onlyNonConflict, setOnlyNonConflict] = useState(false)
+  // 🔹 과목명 / 교수명 검색어
+  const [keyword, setKeyword] = useState('')
+
 
   const toggleDay = (dayKey: DayKey) => {
     setSelectedDays((prev) =>
@@ -89,8 +126,20 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
 
   const resetDays = () => setSelectedDays([])
 
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  
   // 🔹 실제 필터 적용
   const filteredList = list.filter((course) => {
+    // 0) 과목명/교수명 검색
+    if (normalizedKeyword.length > 0) {
+      const name = course.courseName?.toLowerCase() ?? ''
+      const prof = course.professor?.toLowerCase() ?? ''
+
+      if (!name.includes(normalizedKeyword) && !prof.includes(normalizedKeyword)) {
+        return false
+      }
+    }
+
     // 1) 요일 필터
     if (selectedDays.length > 0) {
       const hasSelectedDay = selectedDays.some((dayKey) => !!course.schedule[dayKey])
@@ -106,6 +155,12 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
       if (!course.category.includes('교양')) return false
     }
 
+    // 3) 시간표와 안 겹치는 과목만
+    if (onlyNonConflict && selected.length > 0) {
+      // 하나라도 겹치면 제외
+      if (hasTimeConflictWithSelected(selected, course)) return false
+    }
+
     return true
   })
 
@@ -116,7 +171,12 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
       </div>
 
       <div className="filter-bar">
-        <input className="input" placeholder="과목명 / 교수명 검색" />
+        <input
+          className="input"
+          placeholder="과목명 / 교수명 검색"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
 
         {/* 요일 멀티 선택 */}
         <div className="day-filter-group">
@@ -155,7 +215,11 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
         </select>
 
         <label className="checkbox-label">
-          <input type="checkbox" />
+          <input
+            type="checkbox"
+            checked={onlyNonConflict}
+            onChange={(e) => setOnlyNonConflict(e.target.checked)}
+          />
           <span>시간표와 안 겹치는 과목만</span>
         </label>
       </div>

@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react'
 import '../styles/topControls.css'
 
 interface Props {
-  onLoadJson: (data: any) => void
+  onLoadJson: (data: unknown) => void
   totalCourses: number
   selectedCount: number
   totalCredits: number
