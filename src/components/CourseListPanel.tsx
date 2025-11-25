@@ -1,6 +1,177 @@
+import { type FC, useState } from 'react'
 import '../styles/courseList.css'
 
-const CourseListPanel: React.FC = () => {
+export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface DaySchedule {
+  start: string
+  end: string
+}
+
+export interface Schedule {
+  mon?: DaySchedule
+  tue?: DaySchedule
+  wed?: DaySchedule
+  thu?: DaySchedule
+  fri?: DaySchedule
+  sat?: DaySchedule
+  sun?: DaySchedule
+}
+
+export interface Course {
+  department: string
+  grade: string
+  courseName: string
+  section: string
+  category: string       // 여기 안에 "전공", "교양" 같은 값이 들어온다고 가정
+  credit: number
+  classType: string
+  schedule: Schedule
+  professor: string
+}
+
+interface CourseListPanelProps {
+  courses?: Course[]
+  selectedCourses?: Course[]
+  onAddCourse?: (course: Course) => void
+  onRemoveCourse?: (course: Course) => void
+}
+
+const dayLabelMap: Record<DayKey, string> = {
+  mon: '월',
+  tue: '화',
+  wed: '수',
+  thu: '목',
+  fri: '금',
+  sat: '토',
+  sun: '일',
+}
+
+const orderedDayKeys: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+function formatSchedule(schedule: Schedule): string {
+  const parts: string[] = []
+
+  for (const key of orderedDayKeys) {
+    const info = schedule[key]
+    if (!info) continue
+    parts.push(`${dayLabelMap[key]} ${info.start}~${info.end}`)
+  }
+
+  if (parts.length === 0) return '시간 정보 없음'
+  return parts.join(' · ')
+}
+
+function isSameCourse(a: Course, b: Course): boolean {
+  return a.courseName === b.courseName && a.section === b.section
+}
+
+function timeStringToHour(time: string): number {
+  const [h, m = '0'] = time.split(':')
+  const hour = Number(h)
+  const minute = Number(m)
+  return hour + minute / 60
+}
+
+// 선택된 과목들(selected)과 candidate 과목이 시간표에서 겹치는지 확인
+function hasTimeConflictWithSelected(selected: Course[], candidate: Course): boolean {
+  for (const day of orderedDayKeys) {
+    const candInfo = candidate.schedule[day]
+    if (!candInfo) continue
+
+    const candStart = timeStringToHour(candInfo.start)
+    const candEnd = timeStringToHour(candInfo.end)
+
+    for (const course of selected) {
+      const existInfo = course.schedule[day]
+      if (!existInfo) continue
+
+      const existStart = timeStringToHour(existInfo.start)
+      const existEnd = timeStringToHour(existInfo.end)
+
+      // [start, end) 구간이 하나라도 겹치면 true
+      if (candStart < existEnd && existStart < candEnd) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+const CourseListPanel: FC<CourseListPanelProps> = ({
+  courses,
+  selectedCourses,
+  onAddCourse,
+  onRemoveCourse,
+}) => {
+  const list = courses ?? []
+  const selected = selectedCourses ?? []
+
+  // 🔹 요일 멀티 선택
+  const [selectedDays, setSelectedDays] = useState<DayKey[]>([])
+  // 🔹 전공/교양 필터
+  const [categoryFilter, setCategoryFilter] =
+    useState<'all' | 'major' | 'liberal'>('all')
+  // 🔹 시간표와 안 겹치는 과목만
+  const [onlyNonConflict, setOnlyNonConflict] = useState(false)
+  // 🔹 과목명 / 교수명 검색어
+  const [keyword, setKeyword] = useState('')
+
+
+  const toggleDay = (dayKey: DayKey) => {
+    setSelectedDays((prev) =>
+      prev.includes(dayKey) ? prev.filter((d) => d !== dayKey) : [...prev, dayKey]
+    )
+  }
+
+  const resetDays = () => setSelectedDays([])
+
+  // 🔹 모든 필터 초기화
+  const handleResetFilters = () => {
+    setSelectedDays([])
+    setCategoryFilter('all')
+    setOnlyNonConflict(false)
+    setKeyword('')
+  }
+
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  
+  // 🔹 실제 필터 적용
+  const filteredList = list.filter((course) => {
+    // 0) 과목명/교수명 검색
+    if (normalizedKeyword.length > 0) {
+      const name = course.courseName?.toLowerCase() ?? ''
+      const prof = course.professor?.toLowerCase() ?? ''
+
+      if (!name.includes(normalizedKeyword) && !prof.includes(normalizedKeyword)) {
+        return false
+      }
+    }
+
+    // 1) 요일 필터
+    if (selectedDays.length > 0) {
+      const hasSelectedDay = selectedDays.some((dayKey) => !!course.schedule[dayKey])
+      if (!hasSelectedDay) return false
+    }
+
+    // 2) 전공 / 교양 필터
+    if (categoryFilter === 'major') {
+      // category 값에 '전공' 이 포함된 경우만
+      if (!course.category.includes('전공')) return false
+    } else if (categoryFilter === 'liberal') {
+      // category 값에 '교양' 이 포함된 경우만
+      if (!course.category.includes('교양')) return false
+    }
+
+    // 3) 시간표와 안 겹치는 과목만
+    if (onlyNonConflict && selected.length > 0) {
+      // 하나라도 겹치면 제외
+      if (hasTimeConflictWithSelected(selected, course)) return false
+    }
+
+    return true
+  })
+
   return (
     <section className="panel left-panel">
       <div className="panel-header">
@@ -8,51 +179,112 @@ const CourseListPanel: React.FC = () => {
       </div>
 
       <div className="filter-bar">
-        <input className="input" placeholder="과목명 / 교수명 검색" />
-        <select className="select">
-          <option>요일 전체</option>
-          <option>월</option>
-          <option>화</option>
-          <option>수</option>
-          <option>목</option>
-          <option>금</option>
-          <option>토</option>
-          <option>일</option>
+        <input
+          className="input"
+          placeholder="과목명 / 교수명 검색"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+
+        {/* 요일 멀티 선택 */}
+        <div className="day-filter-group">
+          <button
+            type="button"
+            className={selectedDays.length === 0 ? 'day-pill active' : 'day-pill'}
+            onClick={resetDays}
+          >
+            요일 전체
+          </button>
+          {orderedDayKeys.map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={
+                selectedDays.includes(key) ? 'day-pill active' : 'day-pill'
+              }
+              onClick={() => toggleDay(key)}
+            >
+              {dayLabelMap[key]}
+            </button>
+          ))}
+        </div>
+
+        {/* 🔹 전공 / 교양 셀렉트 (실제 필터랑 연결) */}
+        <select
+          className="select"
+          value={categoryFilter}
+          onChange={(e) =>
+            setCategoryFilter(e.target.value as 'all' | 'major' | 'liberal')
+          }
+        >
+          <option value="all">구분 전체</option>
+          <option value="major">전공</option>
+          <option value="liberal">교양</option>
         </select>
-        <select className="select">
-          <option>구분 전체</option>
-          <option>전공</option>
-          <option>교양</option>
-        </select>
+
         <label className="checkbox-label">
-          <input type="checkbox" />
+          <input
+            type="checkbox"
+            checked={onlyNonConflict}
+            onChange={(e) => setOnlyNonConflict(e.target.checked)}
+          />
           <span>시간표와 안 겹치는 과목만</span>
         </label>
+        <button
+          type="button"
+          className="secondary-button small reset-button"
+          onClick={handleResetFilters}
+        >
+          필터 초기화
+        </button>
       </div>
+      
 
       <div className="panel-body course-list">
-        {/* 더미 카드들 */}
-        <div className="course-item placeholder">
-          <div className="course-main">
-            <div className="course-title">예시) 자료구조</div>
-            <div className="course-meta">CSE101 · 홍길동 교수 · 3학점</div>
-            <div className="course-time">월 3–4교시 · 수 3–4교시</div>
+        {filteredList.length === 0 ? (
+          <div className="empty-hint">
+            선택한 조건에 해당하는 과목이 없습니다.
           </div>
-          <button className="primary-button small">시간표에 추가</button>
-        </div>
+        ) : (
+          <>
+            {filteredList.map((course, idx) => {
+              const alreadySelected = selected.some((c) => isSameCourse(c, course))
 
-        <div className="course-item placeholder">
-          <div className="course-main">
-            <div className="course-title">예시) 공학수학</div>
-            <div className="course-meta">MAT201 · 김철수 교수 · 3학점</div>
-            <div className="course-time">화 1–3교시</div>
-          </div>
-          <button className="primary-button small">시간표에 추가</button>
-        </div>
+              return (
+                <div
+                  key={idx}
+                  className={alreadySelected ? 'course-item selected' : 'course-item'}
+                >
+                  <div className="course-main">
+                    <div className="course-title">{course.courseName}</div>
+                    <div className="course-meta">
+                      {course.department} · {course.professor} · {course.credit}학점
+                    </div>
+                    <div className="course-time">
+                      {formatSchedule(course.schedule)}
+                    </div>
+                  </div>
 
-        <div className="empty-hint">
-          실제 데이터가 들어오면 이 영역에 과목 리스트가 표시됩니다.
-        </div>
+                  {alreadySelected ? (
+                    <button
+                      className="primary-button small"
+                      onClick={() => onRemoveCourse?.(course)}
+                    >
+                      빼기
+                    </button>
+                  ) : (
+                    <button
+                      className="primary-button small"
+                      onClick={() => onAddCourse?.(course)}
+                    >
+                      시간표에 추가
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
       </div>
     </section>
   )
