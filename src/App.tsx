@@ -26,7 +26,6 @@ function timeStringToHour(time: string): number {
   return hour + minute / 60
 }
 
-// JSON / 선택된 과목들에서 "전체 시간 범위" 계산 → periods 배열 생성용
 function extractCourseHourRanges(courses: Course[]): CourseHourRange[] {
   const ranges: CourseHourRange[] = []
 
@@ -92,6 +91,11 @@ function hasTimeConflict(selected: Course[], candidate: Course): boolean {
   return false
 }
 
+// 과목 동일성 비교 (과목명 + 분반 기준)
+function isSameCourse(a: Course, b: Course): boolean {
+  return a.courseName === b.courseName && a.section === b.section
+}
+
 function App() {
   // JSON에서 불러온 전체 과목
   const [courses, setCourses] = useState<Course[]>([])
@@ -99,30 +103,46 @@ function App() {
   // 사용자가 시간표에 추가한 과목
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([])
 
-  // 시간표 세로축 범위 계산용
-  const [courseHours, setCourseHours] = useState<CourseHourRange[]>([])
-  const periods = getPeriodsFromCourses(courseHours)
+  // ⬇ selectedCourses 기준으로 시간 범위 계산
+  const courseHours = useMemo(
+    () => extractCourseHourRanges(selectedCourses),
+    [selectedCourses]
+  )
+
+  const periods = useMemo(
+    () => getPeriodsFromCourses(courseHours),
+    [courseHours]
+  )
 
   const handleLoadJson = (jsonData: unknown) => {
-  if (!Array.isArray(jsonData)) {
-    alert('과목 목록 JSON 형식이 아닙니다.')
-    return
+    if (!Array.isArray(jsonData)) {
+      alert('과목 목록 JSON 형식이 아닙니다.')
+      return
+    }
+
+    const typed = jsonData as Course[]
+
+    setCourses(typed)
+    setSelectedCourses([]) // 새로 불러왔으니 선택 초기화
   }
-
-  const typed = jsonData as Course[]
-
-  setCourses(typed)
-  setSelectedCourses([])
-  setCourseHours(extractCourseHourRanges(typed))
-}
-
 
   const handleAddCourse = (course: Course) => {
     if (hasTimeConflict(selectedCourses, course)) {
       alert('이미 선택된 과목과 시간이 겹칩니다.')
       return
     }
-    setSelectedCourses((prev) => [...prev, course])
+
+    setSelectedCourses((prev) => {
+      // 중복 추가 방지
+      if (prev.some((c) => isSameCourse(c, course))) return prev
+      return [...prev, course]
+    })
+  }
+
+  const handleRemoveCourse = (course: Course) => {
+    setSelectedCourses((prev) =>
+      prev.filter((c) => !isSameCourse(c, course))
+    )
   }
 
   const summary = useMemo(
@@ -136,10 +156,8 @@ function App() {
 
   return (
     <div className="app">
-      {/* 상단 헤더 */}
       <Header />
 
-      {/* 상단 컨트롤 영역 */}
       <TopControls
         onLoadJson={handleLoadJson}
         totalCourses={summary.totalCourses}
@@ -147,11 +165,12 @@ function App() {
         totalCredits={summary.totalCredits}
       />
 
-      {/* 메인 좌우 레이아웃 */}
       <main className="main-layout">
         <CourseListPanel
           courses={courses}
+          selectedCourses={selectedCourses}
           onAddCourse={handleAddCourse}
+          onRemoveCourse={handleRemoveCourse}
         />
         <TimetablePanel
           days={days}
@@ -160,8 +179,7 @@ function App() {
         />
       </main>
 
-      {/* 하단: 추천 과목 */}
-      <RecommendationPanel />
+      {/* <RecommendationPanel /> */}
     </div>
   )
 }
