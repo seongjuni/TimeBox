@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "TimeBox Course Parser",
+  "version": "1.0.1",
+  "description": "우송대 수강신청 목록 JSON 추출 도구",
+  
+  "permissions": [
+    "downloads",
+    "activeTab",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "*://wsinfo.wsu.ac.kr/*",
+    "*://*.wsu.ac.kr/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "*://wsinfo.wsu.ac.kr/*",
+        "*://*.wsu.ac.kr/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["*://wsinfo.wsu.ac.kr/*", "*://*.wsu.ac.kr/*"]
+    }
+  ],
+  
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}
