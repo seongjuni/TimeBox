@@ -3,9 +3,17 @@ import '../styles/topControls.css'
 
 interface Props {
   onLoadJson: (data: any) => void
+  totalCourses: number
+  selectedCount: number
+  totalCredits: number
 }
 
-const TopControls: React.FC<Props> = ({ onLoadJson }) => {
+const TopControls: React.FC<Props> = ({
+  onLoadJson,
+  totalCourses,
+  selectedCount,
+  totalCredits,
+}) => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -49,13 +57,13 @@ const TopControls: React.FC<Props> = ({ onLoadJson }) => {
       </div>
       <div className="summary-box">
         <div>
-          불러온 과목: <strong>0개</strong>
+          불러온 과목: <strong>{totalCourses}개</strong>
         </div>
         <div>
-          선택된 과목: <strong>0개</strong>
+          선택된 과목: <strong>{selectedCount}개</strong>
         </div>
         <div>
-          총 학점: <strong>0 학점</strong>
+          총 학점: <strong>{totalCredits} 학점</strong>
         </div>
       </div>
     </section>

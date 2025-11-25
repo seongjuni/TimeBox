@@ -1,12 +1,50 @@
 // src/components/TimetablePanel.tsx
 import '../styles/timetable.css'
+import type { Course, DayKey } from './CourseListPanel'
 
 interface TimetablePanelProps {
   days: string[]
-  periods: number[] // ← 숫자 배열로 변경
+  periods: number[]
+  selectedCourses: Course[]
 }
 
-const TimetablePanel: React.FC<TimetablePanelProps> = ({ days, periods }) => {
+const labelToDayKey: Record<string, DayKey> = {
+  '월': 'mon',
+  '화': 'tue',
+  '수': 'wed',
+  '목': 'thu',
+  '금': 'fri',
+  '토': 'sat',
+  '일': 'sun',
+}
+
+function timeStringToHour(time: string): number {
+  const [h, m = '0'] = time.split(':')
+  const hour = Number(h)
+  const minute = Number(m)
+  return hour + minute / 60
+}
+
+function getCoursesForCell(courses: Course[], dayLabel: string, hour: number): Course[] {
+  const dayKey = labelToDayKey[dayLabel]
+  if (!dayKey) return []
+
+  return courses.filter((course) => {
+    const info = course.schedule[dayKey]
+    if (!info) return false
+
+    const start = timeStringToHour(info.start)
+    const end = timeStringToHour(info.end)
+
+    return hour >= Math.floor(start) && hour < Math.ceil(end)
+  })
+}
+
+const TimetablePanel: React.FC<TimetablePanelProps> = ({
+  days,
+  periods,
+  selectedCourses,
+}) => {
   return (
     <section className="panel right-panel">
       <div className="panel-header">
@@ -26,20 +64,36 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({ days, periods }) => {
 
           {periods.map((hour) => (
             <div key={hour} className="timetable-row">
-              {/* 출력은 09, 10, 11… 두 자리 숫자로 */}
-              <div className="time-cell">{String(hour).padStart(2, '0')}</div>
+              <div className="time-cell">
+                {String(hour).padStart(2, '0')}:00
+              </div>
 
-              {days.map((day) => (
-                <div key={day + hour} className="slot-cell">
-                  {/* 나중에 과목 블록 들어가는 자리 */}
-                </div>
-              ))}
+              {days.map((day) => {
+                const cellCourses = getCoursesForCell(selectedCourses, day, hour)
+                return (
+                  <div key={day + hour} className="slot-cell">
+                    {cellCourses.map((course) => (
+                      <div
+                        key={`${course.courseName}-${course.section}`}
+                        className="course-block"
+                      >
+                        <div className="course-block-title">
+                          {course.courseName}
+                        </div>
+                        <div className="course-block-meta">
+                          {course.professor} · {course.credit}학점
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
 
         <div className="timetable-hint">
-          왼쪽에서 과목을 선택하면 이 시간표에 색깔 블록으로 표시될 예정입니다.
+          왼쪽에서 과목을 선택하면 이 격자에 색깔 블록으로 표시됩니다.
         </div>
       </div>
     </section>

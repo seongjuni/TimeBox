@@ -1,14 +1,14 @@
 import type { FC } from 'react'
 import '../styles/courseList.css'
 
-type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
-interface DaySchedule {
+export interface DaySchedule {
   start: string // "13:00"
   end: string   // "15:00"
 }
 
-interface Schedule {
+export interface Schedule {
   mon?: DaySchedule
   tue?: DaySchedule
   wed?: DaySchedule
@@ -18,7 +18,7 @@ interface Schedule {
   sun?: DaySchedule
 }
 
-interface Course {
+export interface Course {
   department: string
   grade: string
   courseName: string
@@ -31,7 +31,8 @@ interface Course {
 }
 
 interface CourseListPanelProps {
-  courses?: Course[] // props 안 넘겨도 일단 안 터지게 optional
+  courses?: Course[]
+  onAddCourse?: (course: Course) => void
 }
 
 const dayLabelMap: Record<DayKey, string> = {
@@ -53,14 +54,16 @@ function formatSchedule(schedule: Schedule): string {
   for (const key of orderedDayKeys) {
     const info = schedule[key]
     if (!info) continue
+
     parts.push(`${dayLabelMap[key]} ${info.start}~${info.end}`)
   }
 
   if (parts.length === 0) return '시간 정보 없음'
-  return parts.join(', ')
+
+  return parts.join(' · ')    // 쉼표보다 "·"가 훨씬 가독성 좋음
 }
 
-const CourseListPanel: FC<CourseListPanelProps> = ({ courses }) => {
+const CourseListPanel: FC<CourseListPanelProps> = ({ courses, onAddCourse }) => {
   const list = courses ?? []
 
   return (
@@ -131,7 +134,10 @@ const CourseListPanel: FC<CourseListPanelProps> = ({ courses }) => {
                     {formatSchedule(course.schedule)}
                   </div>
                 </div>
-                <button className="primary-button small">
+                <button 
+                className="primary-button small"
+                onClick={() => onAddCourse?.(course)}
+                >
                   시간표에 추가
                 </button>
               </div>
