@@ -30,5 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
     });
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("home/index.html"),
+      active: ture
+    });
   });
 });

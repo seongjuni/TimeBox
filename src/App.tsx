@@ -3,7 +3,6 @@ import Header from './components/Header'
 import TopControls from './components/TopControls'
 import CourseListPanel from './components/CourseListPanel'
 import TimetablePanel from './components/TimetablePanel'
-import RecommendationPanel from './components/RecommendationPanel'
 
 const days = ['월', '화', '수', '목', '금', '토', '일']
 const periods = [1, 2, 3, 4, 5, 6, 7, 8]

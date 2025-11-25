@@ -44,6 +44,10 @@
     {
       "resources": ["injected.js"],
       "matches": ["*://wsinfo.wsu.ac.kr/*", "*://*.wsu.ac.kr/*"]
+    },
+    {
+      "resources": ["home/*", "home/assets/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   
