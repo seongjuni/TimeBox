@@ -42,28 +42,24 @@ function getPeriodsFromCourses(courseHours: CourseHourRange[]): number[] {
 
 function App() {
   const [courseHours, setCourseHours] = useState<CourseHourRange[]>([])
-
   const periods = getPeriodsFromCourses(courseHours)
 
-  // 디버깅용 예시 (원하면 나중에 제거)
-  // useEffect(() => {
-  //   setCourseHours([
-  //     { startHour: 6, endHour: 9 },   // 06~09시 수업
-  //     { startHour: 17, endHour: 20 } // 17~20시 수업
-  //   ])
-  // }, [])
-
+  const [courses, setCourses] = useState([])
+  const handleLoadJson = (jsonData: any) => {
+    setCourses(jsonData)
+  }
+  
   return (
     <div className="app">
       {/* 상단 헤더 */}
       <Header />
 
       {/* 상단 컨트롤 영역 */}
-      <TopControls />
+      <TopControls onLoadJson={handleLoadJson} />
 
       {/* 메인 좌우 레이아웃 */}
       <main className="main-layout">
-        <CourseListPanel />
+        <CourseListPanel courses={courses} />
         <TimetablePanel days={days} periods={periods} />
       </main>
 
