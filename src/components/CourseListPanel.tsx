@@ -126,6 +126,14 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
 
   const resetDays = () => setSelectedDays([])
 
+  // 🔹 모든 필터 초기화
+  const handleResetFilters = () => {
+    setSelectedDays([])
+    setCategoryFilter('all')
+    setOnlyNonConflict(false)
+    setKeyword('')
+  }
+
   const normalizedKeyword = keyword.trim().toLowerCase()
   
   // 🔹 실제 필터 적용
@@ -222,7 +230,15 @@ const CourseListPanel: FC<CourseListPanelProps> = ({
           />
           <span>시간표와 안 겹치는 과목만</span>
         </label>
+        <button
+          type="button"
+          className="secondary-button small reset-button"
+          onClick={handleResetFilters}
+        >
+          필터 초기화
+        </button>
       </div>
+      
 
       <div className="panel-body course-list">
         {filteredList.length === 0 ? (
