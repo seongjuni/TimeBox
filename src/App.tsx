@@ -5,7 +5,7 @@ import Header from './components/Header'
 import TopControls from './components/TopControls'
 import CourseListPanel, { type Course, type DayKey } from './components/CourseListPanel'
 import TimetablePanel from './components/TimetablePanel'
-import RecommendationPanel from './components/RecommendationPanel'
+// import RecommendationPanel from './components/RecommendationPanel'
 
 const days = ['월', '화', '수', '목', '금', '토', '일']
 

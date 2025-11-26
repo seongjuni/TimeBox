@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>TimeBox 수강 추출기</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 12px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        width: 260px;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+
+      p {
+        font-size: 12px;
+        margin: 0 0 8px;
+      }
+
+      button {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      #status {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #555;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TimeBox 수강 추출기</h1>
+    <p>수강신청 페이지에서 스크롤하며 전체 과목을 JSON으로 저장합니다.</p>
+    <button id="extractBtn">전체 과목 → JSON 다운로드</button>
+    <div id="status"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
