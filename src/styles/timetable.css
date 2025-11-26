@@ -13,7 +13,6 @@
 
   display: grid;
   grid-template-columns: 70px repeat(7, 1fr); /* 시간 + 요일 */
-  grid-auto-rows: 32px; /* 한 시간 칸 높이 */
   position: relative;
 }
 
@@ -53,7 +52,6 @@
   background-color: #e5e7eb;
 }
 
-/* 헤더 왼쪽 빈 칸 */
 .timetable-header-empty {
   background-color: #e5e7eb;
 }
@@ -61,16 +59,16 @@
 /* ---- 시간표 배경 그리드 셀 ---- */
 .slot-cell {
   border-top: 1px solid #e5e7eb;
-  border-right: 1px solid #e5e7eb;
   font-size: 11px;
   position: relative;
-  min-height: 32px;
 }
 
-/* 마지막 열 오른쪽 테두리 제거 (옵션) */
+/* ❌ (문제의 원인) 오른쪽 border 제거하던 코드 삭제됨 */
+/*
 .slot-cell:nth-child(8n) {
   border-right: none;
 }
+*/
 
 .timetable-hint {
   font-size: 12px;
@@ -78,9 +76,8 @@
   margin-top: 4px;
 }
 
-/* ---- 수업 블록 (버튼) ---- */
+/* ---- 수업 블록 ---- */
 .course-block {
-  /* button 리셋 */
   border: none;
   padding: 0;
   margin: 2px;
@@ -88,7 +85,6 @@
   text-align: left;
   cursor: pointer;
 
-  /* 내부 박스 */
   background-color: #dbeafe;
   border-radius: 6px;
   padding: 4px 6px;
@@ -99,15 +95,12 @@
   flex-direction: column;
   gap: 2px;
 
-  /* 칸 전체를 채우도록 */
   align-self: stretch;
   justify-self: stretch;
 
-  /* 여러 줄 허용 (줄 넘치면 다음 줄로) */
-  overflow: hidden; /* 너무 길어질 때 아래로 넘치는 건 잘라냄 */
+  overflow: hidden;
   white-space: normal;
   word-break: break-word;
-
   z-index: 2;
 }
 
@@ -115,14 +108,9 @@
   background-color: #bfdbfe;
 }
 
-.course-block:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 1px;
-}
-
 .course-block-title {
   font-weight: 700;
-  font-size: 12px; /* 한두 사이즈 업 */
+  font-size: 12px;
 }
 
 .course-block-meta {
@@ -130,7 +118,7 @@
   opacity: 0.9;
 }
 
-/* ---- 아래쪽 정보창 ---- */
+/* ---- 아래 정보창 ---- */
 .course-info-panel {
   margin-top: 8px;
   padding: 10px 12px;
