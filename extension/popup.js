@@ -1,6 +1,10 @@
 const btn = document.getElementById("extractBtn");
 const statusEl = document.getElementById("status");
 
+// ★ 네 웹앱 주소로 변경
+const WEBAPP_URL = "http://localhost:5173/";
+
+// 버튼 클릭 시: 수강신청 탭에 스크립트 실행
 btn.addEventListener("click", async () => {
   statusEl.textContent = "전체 과목 수집 중... (자동 스크롤)";
 
@@ -19,16 +23,40 @@ btn.addEventListener("click", async () => {
       target: { tabId: tab.id },
       func: extractCoursesWithScroll,
     });
-
-    statusEl.textContent =
-      "완료! 전체 과목을 수집했고 JSON 파일이 다운로드되었습니다.";
+    // 완료 후 동작은 아래 onMessage에서 처리
   } catch (err) {
     console.error(err);
     statusEl.textContent = "에러 발생: " + err.message;
   }
 });
 
+// 콘텐츠 스크립트(수강신청 페이지에서 실행된 함수)에서
+// 수집이 끝나면 메시지를 보내도록 함
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type === "TIMEBOX_COURSES_EXTRACTED") {
+    const courses = message.data || [];
+
+    try {
+      // 웹앱으로 넘길 JSON 문자열
+      const jsonStr = JSON.stringify(courses);
+      const encoded = encodeURIComponent(jsonStr);
+
+      // 1) TimeBox 웹 새창 열기
+      const url = `${WEBAPP_URL}#data=${encoded}`;
+      chrome.tabs.create({ url });
+
+      statusEl.textContent =
+        `완료! 총 ${courses.length}개의 과목을 TimeBox 웹으로 전송하고 JSON을 다운로드했습니다.`;
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "웹으로 데이터 전달 중 오류가 발생했습니다.";
+    }
+  }
+});
+
+// ================================
 // 이 함수는 "수강신청 페이지 안"에서 실행된다.
+// ================================
 function extractCoursesWithScroll() {
   (async () => {
     function sleep(ms) {
@@ -177,6 +205,7 @@ function extractCoursesWithScroll() {
       return;
     }
 
+    // ✅ 1) 이 페이지에서 바로 JSON 다운로드 (원래 너가 쓰던 방식)
     const json = JSON.stringify(result, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -190,6 +219,12 @@ function extractCoursesWithScroll() {
     a.remove();
     URL.revokeObjectURL(url);
 
-    alert(`총 ${result.length}개의 과목을 JSON 파일로 저장했습니다.`);
+    // ✅ 2) 확장프로그램(popup)으로도 전송 → 웹창 열기 용
+    chrome.runtime.sendMessage({
+      type: "TIMEBOX_COURSES_EXTRACTED",
+      data: result,
+    });
+
+    alert(`총 ${result.length}개의 과목을 JSON 파일로 저장하고 TimeBox로 전송합니다.`);
   })();
 }
