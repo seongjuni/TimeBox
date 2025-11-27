@@ -8,7 +8,7 @@ import CourseListPanel, {
   type DayKey,
 } from './components/CourseListPanel'
 
-import RecommendationPanel from './components/RecommendationPanel';
+import TimetablePanel from './components/TimetablePanel'
 
 const days = ['월', '화', '수', '목', '금', '토', '일']
 
