@@ -1,5 +1,5 @@
 // src/components/TimetablePanel.tsx
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import '../styles/timetable.css'
 import type { Course, DayKey } from './CourseListPanel'
 
@@ -30,12 +30,9 @@ type TimetableBlock = {
   id: string
   course: Course
   startHourCell: number
-  endHourCell: number // 예: 9~12면 12
+  endHourCell: number
 }
 
-/**
- * 특정 요일(dayLabel)에 대해 연속된 수업을 하나의 블록으로 만든다.
- */
 function buildDayBlocks(
   courses: Course[],
   dayLabel: string,
@@ -59,7 +56,6 @@ function buildDayBlocks(
     const rawStart = Math.floor(startFloat)
     const rawEnd = Math.ceil(endFloat)
 
-    // periods 범위로 클램핑
     const startCell = Math.max(rawStart, minPeriod)
     const endCell = Math.min(rawEnd, maxPeriod)
 
@@ -83,6 +79,31 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
 }) => {
   const [activeCourse, setActiveCourse] = useState<Course | null>(null)
 
+  const hasSaturday = useMemo(
+    () => selectedCourses.some((c) => c.schedule['sat']),
+    [selectedCourses]
+  )
+  const hasSunday = useMemo(
+    () => selectedCourses.some((c) => c.schedule['sun']),
+    [selectedCourses]
+  )
+
+  const visibleDays = useMemo(
+    () =>
+      days.filter((d) => {
+        if (d === '토') return hasSaturday
+        if (d === '일') return hasSunday
+        return true
+      }),
+    [days, hasSaturday, hasSunday]
+  )
+
+  // 🔥 visibleDays 개수에 맞게 그리드 칼럼 수 동적 설정
+  const gridTemplateColumns = useMemo(
+    () => `70px repeat(${visibleDays.length}, 1fr)`,
+    [visibleDays.length]
+  )
+
   return (
     <section className="panel right-panel">
       <div className="panel-header">
@@ -90,14 +111,18 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
       </div>
 
       <div className="panel-body timetable-wrapper">
-        <div className="timetable">
-          {/* ───── 1. 헤더 줄 (요일) ───── */}
+        <div
+          className="timetable"
+          style={{ gridTemplateColumns }} // ← 여기 중요
+        >
+          {/* 1. 헤더: 왼쪽 상단 빈 칸 */}
           <div
             className="time-cell day-cell header-cell timetable-header-empty"
             style={{ gridRow: 1, gridColumn: 1 }}
           />
 
-          {days.map((day, dayIndex) => (
+          {/* 2. 헤더: 요일 */}
+          {visibleDays.map((day, dayIndex) => (
             <div
               key={day}
               className="day-cell header-cell"
@@ -107,7 +132,7 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
             </div>
           ))}
 
-          {/* ───── 2. 왼쪽 시간 라벨 ───── */}
+          {/* 3. 왼쪽 시간 라벨 */}
           {periods.map((hour, rowIndex) => (
             <div
               key={`time-${hour}`}
@@ -118,9 +143,9 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
             </div>
           ))}
 
-          {/* ───── 3. 배경 격자 셀 ───── */}
+          {/* 4. 배경 격자 */}
           {periods.map((hour, rowIndex) =>
-            days.map((day, dayIndex) => (
+            visibleDays.map((day, dayIndex) => (
               <div
                 key={`cell-${day}-${hour}`}
                 className="slot-cell"
@@ -128,7 +153,7 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
                   gridRow: rowIndex + 2,
                   gridColumn: dayIndex + 2,
                   borderRight:
-                    dayIndex === days.length - 1
+                    dayIndex === visibleDays.length - 1
                       ? 'none'
                       : '1px solid #e5e7eb',
                 }}
@@ -136,18 +161,14 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
             ))
           )}
 
-          {/* ───── 4. 실제 수업 블록 (클릭 가능한 버튼) ───── */}
-          {days.map((day, dayIndex) => {
+          {/* 5. 수업 블록 */}
+          {visibleDays.map((day, dayIndex) => {
             const blocks = buildDayBlocks(selectedCourses, day, periods)
 
             return blocks.map((block) => {
               const startIndex = periods.indexOf(block.startHourCell)
               const endIndex = periods.indexOf(block.endHourCell)
-
               if (startIndex === -1 || endIndex === -1) return null
-
-              const rowStart = startIndex + 2 // 1은 헤더, 2부터 시간
-              const rowEnd = endIndex + 2
 
               return (
                 <button
@@ -156,8 +177,8 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
                   className="course-block"
                   style={{
                     gridColumn: dayIndex + 2,
-                    gridRowStart: rowStart,
-                    gridRowEnd: rowEnd,
+                    gridRowStart: startIndex + 2,
+                    gridRowEnd: endIndex + 2,
                   }}
                   onClick={() => setActiveCourse(block.course)}
                 >
@@ -173,7 +194,7 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
           })}
         </div>
 
-        {/* ───── 5. 아래쪽 정보창 ───── */}
+        {/* 6. 아래 정보창 */}
         {activeCourse && (
           <div className="course-info-panel">
             <div className="course-info-header">
@@ -196,7 +217,7 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
             </div>
 
             <div className="course-info-schedule">
-              {days.map((label) => {
+              {visibleDays.map((label) => {
                 const dayKey = labelToDayKey[label]
                 const info = activeCourse.schedule[dayKey]
                 if (!info) return null

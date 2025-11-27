@@ -1,59 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "TimeBox Course Parser",
-  "version": "1.0.1",
-  "description": "우송대 수강신청 목록 JSON 추출 도구",
-  
+  "name": "TimeBox 수강 추출기 (스크롤 수집)",
+  "version": "1.0.0",
+  "description": "수강신청 페이지에서 스크롤하면서 전체 과목을 JSON으로 저장하거나 TimeBox 웹으로 전송합니다.",
   "permissions": [
-    "downloads",
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs",
+    "downloads"
   ],
-  
-  "host_permissions": [
-    "*://wsinfo.wsu.ac.kr/*",
-    "*://*.wsu.ac.kr/*"
-  ],
-  
-  "background": {
-    "service_worker": "background.js"
-  },
-  
   "action": {
-    "default_popup": "popup/popup.html",
-    "default_icon": {
-      "16": "assets/icon16.png",
-      "48": "assets/icon48.png",
-      "128": "assets/icon128.png"
-    }
-  },
-  
-  "content_scripts": [
-    {
-      "matches": [
-        "*://wsinfo.wsu.ac.kr/*",
-        "*://*.wsu.ac.kr/*"
-      ],
-      "js": ["content-script.js"],
-      "run_at": "document_start",
-      "all_frames": true
-    }
-  ],
-  
-  "web_accessible_resources": [
-    {
-      "resources": ["injected.js"],
-      "matches": ["*://wsinfo.wsu.ac.kr/*", "*://*.wsu.ac.kr/*"]
-    },
-    {
-      "resources": ["home/*", "home/assets/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  
-  "icons": {
-    "16": "assets/icon16.png",
-    "48": "assets/icon48.png",
-    "128": "assets/icon128.png"
+    "default_popup": "popup.html"
   }
 }

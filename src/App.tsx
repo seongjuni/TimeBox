@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 import './styles/global.css'
 import Header from './components/Header'
 import TopControls from './components/TopControls'
-import CourseListPanel, { type Course, type DayKey } from './components/CourseListPanel'
-import TimetablePanel from './components/TimetablePanel'
+import CourseListPanel, {
+  type Course,
+  type DayKey,
+} from './components/CourseListPanel'
+
+import RecommendationPanel from './components/RecommendationPanel';
 
 const days = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -124,6 +128,25 @@ function App() {
     setCourses(typed)
     setSelectedCourses([]) // 새로 불러왔으니 선택 초기화
   }
+
+  // ★ URL 해시(#data=...)에서 JSON 자동 읽기
+  useEffect(() => {
+    const hash = window.location.hash
+    const prefix = '#data='
+
+    if (!hash.startsWith(prefix)) return
+
+    try {
+      const encoded = hash.slice(prefix.length)
+      const jsonStr = decodeURIComponent(encoded)
+      const data = JSON.parse(jsonStr)
+
+      handleLoadJson(data)
+    } catch (err) {
+      console.error(err)
+      alert('URL에서 과목 데이터를 읽는 중 오류가 발생했습니다.')
+    }
+  }, [])
 
   const handleAddCourse = (course: Course) => {
     if (hasTimeConflict(selectedCourses, course)) {
