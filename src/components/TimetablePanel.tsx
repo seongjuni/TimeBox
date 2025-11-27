@@ -124,7 +124,14 @@ const TimetablePanel: React.FC<TimetablePanelProps> = ({
               <div
                 key={`cell-${day}-${hour}`}
                 className="slot-cell"
-                style={{ gridRow: rowIndex + 2, gridColumn: dayIndex + 2 }}
+                style={{
+                  gridRow: rowIndex + 2,
+                  gridColumn: dayIndex + 2,
+                  borderRight:
+                    dayIndex === days.length - 1
+                      ? 'none'
+                      : '1px solid #e5e7eb',
+                }}
               />
             ))
           )}
